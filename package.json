@@ -1,0 +1,37 @@
+{
+  "name": "repo-changelog",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Track the latest releases and changelogs from your favorite open source repositories",
+  "author": "wudi <wuchendi96@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.68",
+    "@iconify-json/simple-icons": "^1.2.53",
+    "@nuxt/ui": "^4.0.0",
+    "@nuxtjs/mdc": "0.17.4",
+    "@vercel/analytics": "^1.5.0",
+    "@vueuse/nuxt": "13.9.0",
+    "nuxt": "4.1.2",
+    "vue": "^3.5.22"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.9.0",
+    "eslint": "^9.36.0",
+    "typescript": "^5.9.2",
+    "vue-tsc": "^3.0.8"
+  },
+  "resolutions": {
+    "unimport": "4.1.1"
+  },
+  "packageManager": "pnpm@10.15.1"
+}
