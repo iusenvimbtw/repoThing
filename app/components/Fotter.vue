@@ -6,7 +6,7 @@
         target="_blank"
         class="text-primary hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
       >
-        Ronit and Tejas
+        Ronit , Tejas and Ananya
       </ULink>
     </p>
   </footer>
