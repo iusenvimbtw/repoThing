@@ -37,7 +37,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     apiUrl: process.env.API_URL || defaultApiUrl,
-    resendApiUrl: process.env.RESEND_API_URL,
+    resendApiKey: process.env.RESEND_API_KEY,
     public: {
       apiUrl: process.env.API_URL || defaultApiUrl
     }
