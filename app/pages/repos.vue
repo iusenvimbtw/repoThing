@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatTimeAgo } from '@vueuse/core'
+import { formatTimeAgo, useStorage } from '@vueuse/core'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
 
 const config = useRuntimeConfig()
@@ -7,8 +7,10 @@ const route = useRoute()
 const router = useRouter()
 
 const releases = ref<any[]>([])
-const releasesLoading = ref<boolean>(false)
+const releasesLoading = ref<boolean>(true)
 const releasesError = ref<string>('')
+const notificationPrefs = useStorage<Record<string, boolean>>('notification-prefs', {})
+const toast = useToast()
 
 const selectedRepos = computed(() => {
   if (!route.query.repos) return []
@@ -35,6 +37,52 @@ const sidebarDescription = computed(() => {
   if (repoCount === 1) return `Latest releases and updates for ${selectedRepos.value[0]}`
   return `Latest releases and updates for ${repoCount} selected repositories`
 })
+
+const groupedReleases = computed(() => {
+  if (!releases.value.length) return {}
+  return releases.value.reduce((acc, release) => {
+    if (!acc[release.repo]) {
+      acc[release.repo] = []
+    }
+    acc[release.repo].push(release)
+    return acc
+  }, {} as Record<string, any[]>)
+})
+
+async function toggleNotification(repo: string) {
+  const newValue = !notificationPrefs.value[repo]
+  notificationPrefs.value[repo] = newValue
+
+  if (newValue) {
+    try {
+      await $fetch('/api/notify', {
+        method: 'POST',
+        body: { repo }
+      })
+      toast.add({
+        title: 'Subscribed!',
+        description: `You will be notified of new releases for ${repo}.`,
+        icon: 'i-lucide-bell-ring',
+        color: 'green'
+      })
+    } catch (error) {
+      console.error('Failed to subscribe:', error)
+      notificationPrefs.value[repo] = false
+      toast.add({
+        title: 'Subscription Failed',
+        description: 'Could not subscribe to notifications. Please try again.',
+        icon: 'i-lucide-alert-circle',
+        color: 'red'
+      })
+    }
+  } else {
+    toast.add({
+      title: 'Unsubscribed',
+      description: `You will no longer receive notifications for ${repo}.`,
+      icon: 'i-lucide-bell-off'
+    })
+  }
+}
 
 function validateRepo(repo: string): boolean {
   return /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/.test(repo)
@@ -128,14 +176,6 @@ onMounted(() => {
           size: 'md',
           target: '_blank'
         }
-        // {
-        //   label: 'More',
-        //   icon: 'i-lucide-external-link',
-        //   variant: 'outline',
-        //   size: 'md',
-        //   to: 'https://notes-wudi.pages.dev/projects',
-        //   target: '_blank'
-        // }
       ]"
       :ui="{
         root: 'border-b border-default xl:border-b-0 xl:sticky xl:inset-y-0 xl:h-screen overflow-hidden',
@@ -205,8 +245,8 @@ onMounted(() => {
       </template>
     </UPageSection>
 
-    <section class="px-4 sm:px-6 xl:px-0 xl:-ms-30 xl:flex-1 bg-background">
-      <UColorModeButton class="fixed top-4 right-4 z-10" />
+    <section class="px-4 sm:px-6 xl:px-0 xl:-ms-30 xl:flex-1 bg-background relative">
+      <UColorModeButton class="fixed top-4 right-4 z-50" />
 
       <UChangelogVersions
         as="main"
@@ -267,60 +307,94 @@ onMounted(() => {
           </UButton>
         </div>
 
-        <UChangelogVersion
-          v-for="release in releases"
-          :key="`${release.repo}-${release.tag}`"
-          :to="release.url"
-          target="_blank"
-          :title="release.title"
-          :badge="{
-            label: `@${release.repo}`,
-            variant: 'outline',
-            color: 'neutral'
-          }"
-          :date="formatTimeAgo(new Date(release.date))"
-          :ui="{
-            root: 'flex items-start',
-            container: 'max-w-xl 2xl:mx-12 w-full',
-            header: 'border-b border-default pb-3 sm:pb-4',
-            title: 'text-xl sm:text-2xl lg:text-3xl',
-            date: 'text-xs/6 sm:text-xs/9 text-highlighted font-mono',
-            indicator: 'sticky top-0 pt-8 -mt-8 sm:pt-16 sm:-mt-16 md:pt-24 md:-mt-24 lg:pt-32 lg:-mt-32'
-          }"
-        >
-          <template #body>
-            <div
-              class="relative"
-              :class="{
-                'h-auto min-h-[150px] sm:min-h-[200px]': release.open,
-                'h-[150px] sm:h-[200px] overflow-y-hidden': !release.open && release.body.children.length > 4
+        <template v-else>
+          <template
+            v-for="(repoReleases, repoName, groupIndex) in groupedReleases"
+            :key="repoName"
+          >
+            <UChangelogVersion
+              v-for="(release, releaseIndex) in repoReleases"
+              :key="`${release.repo}-${release.tag}`"
+              :to="release.url"
+              target="_blank"
+              :title="release.title"
+              :badge="{ label: release.tag, variant: 'outline', color: 'neutral' }"
+              :date="formatTimeAgo(new Date(release.date))"
+              :ui="{
+                root: 'flex items-start',
+                container: 'max-w-xl 2xl:mx-12 w-full',
+                header: 'border-b border-default pb-3 sm:pb-4',
+                title: 'text-xl sm:text-2xl lg:text-3xl',
+                date: 'text-xs/6 sm:text-xs/9 text-highlighted font-mono',
+                indicator: 'sticky top-0 pt-8 -mt-8 sm:pt-16 sm:-mt-16 md:pt-24 md:-mt-24 lg:pt-32 lg:-mt-32'
               }"
             >
-              <MDCRenderer
-                v-if="release.body"
-                :body="release.body"
-                style="zoom: 0.85"
-              />
-              <div
-                v-if="!release.open && release.body.children.length > 4"
-                class="h-12 sm:h-16 absolute inset-x-0 bottom-0 flex items-end justify-center"
-                :class="{ 'bg-gradient-to-t from-default to-default/50': !release.open }"
-              >
-                <UButton
-                  size="sm"
-                  icon="i-lucide-chevron-down"
-                  color="neutral"
-                  variant="outline"
-                  :data-state="release.open ? 'open' : 'closed'"
-                  :label="release.open ? 'Collapse' : 'Expand'"
-                  class="group text-xs sm:text-sm"
-                  :ui="{ leadingIcon: 'group-data-[state=open]:rotate-180' }"
-                  @click="release.open = !release.open"
-                />
-              </div>
-            </div>
+              <template v-if="releaseIndex === 0" #header>
+                <div class="mb-6 pb-4 border-b-2 border-primary/30">
+                  <div class="flex items-center justify-between gap-4 flex-wrap mb-3">
+                    <div class="flex-1 min-w-0">
+                      <h2 class="text-xl sm:text-2xl font-bold text-foreground mb-1">
+                        {{ repoName }}
+                      </h2>
+                      <p class="text-xs text-muted-foreground">
+                        {{ repoReleases.length }} {{ repoReleases.length === 1 ? 'release' : 'releases' }}
+                      </p>
+                    </div>
+                    <UButton
+                      :icon="notificationPrefs[repoName] ? 'i-lucide-bell-ring' : 'i-lucide-bell'"
+                      size="sm"
+                      :color="notificationPrefs[repoName] ? 'primary' : 'gray'"
+                      :variant="notificationPrefs[repoName] ? 'solid' : 'outline'"
+                      :aria-label="`Toggle notifications for ${repoName}`"
+                      class="shrink-0"
+                      @click.prevent.stop="toggleNotification(repoName as string)"
+                    >
+                      <span class="hidden sm:inline">{{ notificationPrefs[repoName] ? 'Subscribed' : 'Subscribe' }}</span>
+                    </UButton>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-xl sm:text-2xl lg:text-3xl font-semibold">
+                    {{ release.title }}
+                  </h3>
+                </div>
+              </template>
+
+              <template #body>
+                <div
+                  class="relative"
+                  :class="{
+                    'h-auto min-h-[150px] sm:min-h-[200px]': release.open,
+                    'h-[150px] sm:h-[200px] overflow-y-hidden': !release.open && release.body.children.length > 4
+                  }"
+                >
+                  <MDCRenderer
+                    v-if="release.body"
+                    :body="release.body"
+                    class="prose prose-sm dark:prose-invert max-w-none"
+                  />
+                  <div
+                    v-if="!release.open && release.body.children.length > 4"
+                    class="h-12 sm:h-16 absolute inset-x-0 bottom-0 flex items-end justify-center bg-gradient-to-t from-background to-transparent"
+                  >
+                    <UButton
+                      size="sm"
+                      icon="i-lucide-chevron-down"
+                      color="neutral"
+                      variant="outline"
+                      :data-state="release.open ? 'open' : 'closed'"
+                      :label="release.open ? 'Collapse' : 'Expand'"
+                      class="group text-xs sm:text-sm"
+                      :ui="{ leading: { icon: 'group-data-[state=open]:rotate-180' } }"
+                      @click.prevent="release.open = !release.open"
+                    />
+                  </div>
+                </div>
+              </template>
+            </UChangelogVersion>
           </template>
-        </UChangelogVersion>
+        </template>
       </UChangelogVersions>
     </section>
   </div>

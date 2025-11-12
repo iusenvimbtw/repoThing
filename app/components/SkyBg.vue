@@ -83,6 +83,7 @@ const twinkleDuration = computed(() => {
 }
 
 @keyframes twinkle {
+
   0%, 100% {
     opacity: 0.2;
   }

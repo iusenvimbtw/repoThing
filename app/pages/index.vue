@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatTimeAgo } from '@vueuse/core'
+import { formatTimeAgo, useStorage } from '@vueuse/core'
 import type { GithubRepo, RepoApiResponse, ReposApiResponse, SearchResult } from '~~/shared/types/releases'
 
 const config = useRuntimeConfig()
@@ -13,6 +13,8 @@ const searchResults = ref<SearchResult[]>([])
 const showResults = ref<boolean>(false)
 const sortBy = ref<'stars' | 'forks' | 'name' | 'updated'>('stars')
 const sortOrder = ref<'asc' | 'desc'>('desc')
+
+const recentlyViewed = useStorage<string[]>('recently-viewed-repos', [])
 
 // Helper function to convert GithubRepo to SearchResult
 function convertToSearchResult(repo: GithubRepo): SearchResult {
@@ -185,6 +187,18 @@ async function viewReleases() {
   isLoading.value = true
 
   try {
+    // Add to recently viewed
+    const currentRepos = [...recentlyViewed.value]
+    selectedRepos.value.forEach((repo) => {
+      // Remove if exists to add to front
+      const index = currentRepos.indexOf(repo)
+      if (index > -1) {
+        currentRepos.splice(index, 1)
+      }
+      currentRepos.unshift(repo)
+    })
+    recentlyViewed.value = currentRepos.slice(0, 10) // Limit to 10
+
     await router.push({
       path: '/repos',
       query: {
@@ -194,6 +208,19 @@ async function viewReleases() {
   } finally {
     isLoading.value = false
   }
+}
+
+function viewRecentRepo(repo: string) {
+  router.push({
+    path: '/repos',
+    query: {
+      repos: repo
+    }
+  })
+}
+
+function removeRecentRepo(repo: string) {
+  recentlyViewed.value = recentlyViewed.value.filter(r => r !== repo)
 }
 
 function clearAllSelections() {
@@ -488,6 +515,40 @@ function clearAllSelections() {
             {{ isLoading ? 'Loading...' : `View Changelog (${selectedRepos.length})` }}
           </span>
         </UButton>
+      </div>
+    </div>
+
+    <div
+      v-else-if="recentlyViewed.length > 0"
+      class="mb-6 sm:mb-8"
+    >
+      <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+        <UIcon
+          name="i-lucide-history"
+          class="w-4 h-4 sm:w-5 sm:h-5"
+        />
+        Recently Viewed
+      </h3>
+      <div class="flex flex-wrap gap-1.5 sm:gap-2">
+        <UBadge
+          v-for="repo in recentlyViewed"
+          :key="repo"
+          variant="outline"
+          size="sm"
+          class="group cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-950/50 hover:border-primary-300 dark:hover:border-primary-700 hover:text-primary-600 dark:hover:text-primary-400 transition-all duration-200 px-2 sm:px-3 py-1 sm:py-1.5"
+          @click="viewRecentRepo(repo)"
+        >
+          <UIcon
+            name="i-lucide-github"
+            class="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1"
+          />
+          <span class="text-xs sm:text-sm break-all">{{ repo }}</span>
+          <UIcon
+            name="i-lucide-x"
+            class="ml-1 sm:ml-2 w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-50 group-hover:opacity-100 transition-opacity duration-200"
+            @click.stop="removeRecentRepo(repo)"
+          />
+        </UBadge>
       </div>
     </div>
 
