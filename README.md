@@ -1,4 +1,4 @@
-# Repository Changelog
+# repoThing
 
 Powerful web-based tool for tracking releases and changelogs from your favorite open source repositories. Monitor multiple GitHub projects in one unified dashboard.
 
