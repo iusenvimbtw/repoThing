@@ -1,9 +1,8 @@
 {
-  "name": "repo-changelog",
+  "name": "repoThing",
   "version": "1.0.0",
   "private": true,
   "description": "Track the latest releases and changelogs from your favorite open source repositories",
-  "author": "wudi <wuchendi96@gmail.com>",
   "license": "MIT",
   "scripts": {
     "build": "nuxt build",

@@ -14,7 +14,6 @@ export default defineNuxtPlugin(() => {
       path: route.path
     })
   })
-  // On navigation to a new page
   nuxtApp.hooks.hook('page:finish', () => {
     pageview({
       route: route.matched[0]?.path || route.path,

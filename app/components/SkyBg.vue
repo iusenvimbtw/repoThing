@@ -26,7 +26,6 @@ const props = withDefaults(defineProps<{
 
 const route = useRoute()
 
-// Generate random stars
 const generateStars = (count: number): Star[] => {
   return Array.from({ length: count }, () => {
     const x = Math.floor(Math.random() * 100)
@@ -38,10 +37,8 @@ const generateStars = (count: number): Star[] => {
   })
 }
 
-// Generate all stars
 const stars = useState<Star[]>(`${kebabCase(route.path)}-sky`, () => generateStars(props.starCount))
 
-// Compute twinkle animation duration based on speed
 const twinkleDuration = computed(() => {
   const speedMap: Record<string, string> = {
     slow: '4s',

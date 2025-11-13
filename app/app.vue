@@ -4,12 +4,8 @@ const route = useRoute()
 const siteConfig = {
   title: 'Repository Changelog',
   description: 'Track the latest releases and changelogs from your favorite open source repositories',
-  url: 'https://repo-changelog.vercel.app/',
+  url: 'https://repothing.vercel.app/',
   image: 'https://cdn.jsdelivr.net/gh/cdLab996/picture-lib/wudi/repo-changelog/index.png',
-  author: {
-    name: 'wudi',
-    twitter: '@wuchendi96'
-  },
   navigation: {
     links: [
       {
@@ -24,7 +20,6 @@ const siteConfig = {
       //   icon: 'i-lucide-external-link',
       //   variant: 'outline',
       //   size: 'md',
-      //   to: 'https://notes-wudi.pages.dev/projects',
       //   target: '_blank'
       // }
     ]
@@ -52,12 +47,9 @@ useHead({
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
     { name: 'keywords', content: siteConfig.meta.keywords.join(', ') },
     { name: 'referrer', content: 'no-referrer-when-downgrade' },
-    { name: 'author', content: siteConfig.author.name },
     { name: 'robots', content: 'index, follow' },
 
     { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:site', content: siteConfig.author.twitter },
-    { name: 'twitter:creator', content: siteConfig.author.twitter },
     { name: 'twitter:title', content: siteConfig.title },
     { name: 'twitter:description', content: siteConfig.description },
     { name: 'twitter:image', content: siteConfig.image }

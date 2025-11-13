@@ -16,7 +16,6 @@ const sortOrder = ref<'asc' | 'desc'>('desc')
 
 const recentlyViewed = useStorage<string[]>('recently-viewed-repos', [])
 
-// Helper function to convert GithubRepo to SearchResult
 function convertToSearchResult(repo: GithubRepo): SearchResult {
   return {
     id: repo.id,
@@ -187,17 +186,15 @@ async function viewReleases() {
   isLoading.value = true
 
   try {
-    // Add to recently viewed
     const currentRepos = [...recentlyViewed.value]
     selectedRepos.value.forEach((repo) => {
-      // Remove if exists to add to front
       const index = currentRepos.indexOf(repo)
       if (index > -1) {
         currentRepos.splice(index, 1)
       }
       currentRepos.unshift(repo)
     })
-    recentlyViewed.value = currentRepos.slice(0, 10) // Limit to 10
+    recentlyViewed.value = currentRepos.slice(0, 10)
 
     await router.push({
       path: '/repos',
